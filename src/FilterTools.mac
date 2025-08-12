@@ -1,0 +1,187 @@
+/* Useful FIR and IIR Filter Functions for wxmaxima
+
+MIT License
+
+Copyright (c) 2025 Mark Wickert
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE. */
+
+
+load("DSPTools.mac");
+load("bessel");
+
+/* Kaiser window function */
+w_kaiser(As_dB,M):= block([alpha,my_beta,w],
+    alpha:M/2,
+    if As_dB > 50 then my_beta:(0.1102*(As_dB-8.7))
+    elseif As_dB > 21 then my_beta:(0.5842*(As_dB-21)^0.4  + 0.07886*(As_dB-21))
+    else my_beta:0,
+    w:makelist(bessel_i(0,my_beta*(1-((n-1-alpha)/alpha)^2)^0.5)/bessel_i(0,my_beta),n,1,M+1) 
+);
+
+
+firwin_kaiser_lpf(f_pass, f_stop, d_stop, fs, n_bump):= 
+    block([wc,delta_w,M,N_taps,b_sinc,b_k],
+    if fs = [] then fs:1.0,
+    if n_bump = [] then n_bump:0,
+    wc:2*%pi*(f_pass + f_stop)/2/fs,
+    delta_w:2*%pi*(f_stop - f_pass)/fs,
+    /* Find the filter order */
+    M:ceiling((d_stop - 8)/(2.285*delta_w)),
+    /* Adjust filter order up or down as needed */
+    M:M+n_bump,
+    N_taps:M + 1,
+    /* Obtain the Kaiser window */
+    w_k:w_kaiser(d_stop,M),
+    /* force float coefficients since w_k is already float */
+    b_sinc:float(makelist(wc/%pi*sinc(wc/%pi*((k-1)-M/2)),k,1,N_taps)),
+    b_k:b_sinc * w_k,
+    b_k:b_k/sum(b_k[k],k,1,N_taps) 
+);
+
+
+firwin_kaiser_hpf(f_stop, f_pass, d_stop, fs, n_bump):= 
+    block([   f_pass_eq,f_stop_eq,wc,delta_w,M,N_taps,b_sinc,b_k],
+    if fs = [] then fs:1.0,
+    if n_bump = [] then n_bump:0,
+    /* Transform HPF critical frequencies to lowpass equivalent */
+    f_pass_eq:fs/2 - f_pass,
+    f_stop_eq:fs/2 - f_stop,
+    /* Design LPF equivalent */
+    wc:2*%pi*(f_pass_eq + f_stop_eq)/2/fs,
+    delta_w:2*%pi*(f_stop_eq - f_pass_eq)/fs,
+    /* Find the filter order */
+    M:ceiling((d_stop - 8)/(2.285*delta_w)),
+    /* Adjust filter order up or down as needed */
+    M:M+n_bump,
+    N_taps:M + 1,
+    /* Obtain the Kaiser window */
+    w_k:w_kaiser(d_stop,M),
+    /* force float coefficients since w_k is already float */
+    b_sinc:float(makelist(wc/%pi*sinc(wc/%pi*((k-1)-M/2)),k,1,N_taps)),
+    b_k:b_sinc * w_k,
+    b_k:b_k/sum(b_k[k],k,1,N_taps),
+    /* Transform LPF equivalent to HPF */
+    b_k_hp:makelist(b_k[k]*(-1)^(k-1),k,1,N_taps)
+);
+
+
+firwin_kaiser_bpf(f_stop1, f_pass1, f_pass2, f_stop2, d_stop, fs, n_bump):= 
+    block([f_pass,f_stop,wc,delta_w,M,N_taps,b_sinc,b_k,f0,w0,b_k_bp],
+    if fs = [] then fs:1.0,
+    if n_bump = [] then n_bump:0,
+    f_pass:(f_pass2 - f_pass1)/2,
+    f_stop:(f_stop2 - f_stop1)/2,
+    /* Continue to design equivalent LPF */
+    wc:2*%pi*(f_pass + f_stop)/2/fs,
+    delta_w:2*%pi*(f_stop - f_pass)/fs,
+    /* Find the filter order */
+    M :ceiling((d_stop - 8)/(2.285*delta_w)),
+    /* Adjust filter order up or down as needed */
+    M:M+n_bump,
+    N_taps:M + 1,
+    /* Obtain the Kaiser window */
+    w_k:w_kaiser(d_stop,M),
+    /* force float coefficients since w_k is already float */
+    b_sinc:float(makelist(wc/%pi*sinc(wc/%pi*((k-1)-M/2)),k,1,N_taps)),
+    b_k:b_sinc * w_k,
+    b_k:b_k/sum(b_k[k],k,1,N_taps),
+    /* Transform LPF to BPF */
+    f0:(f_pass2 + f_pass1)/2,
+    w0:2*%pi*f0/fs,
+    b_k_bp:float(makelist(2*b_k[k]*cos(w0*(k-1-M/2)),k,1,N_taps))
+);
+
+
+
+firwin_kaiser_bsf(f_stop1, f_pass1, f_pass2, f_stop2, d_stop, fs, n_bump):= 
+    block([f_pass,f_stop,wc,delta_w,M,N_taps,b_sinc,b_k,f0,w0,b_k_bp],
+    if fs = [] then fs:1.0,
+    if n_bump = [] then n_bump:0,
+    /* First design a BPF starting from simple LPF equivalent
+    The upper and lower stopbands are assumed to have 
+    the same attenuation level. The LPF equivalent critical
+    frequencies: */
+    f_pass:(f_pass2 - f_pass1)/2,
+    f_stop:(f_stop2 - f_stop1)/2,
+    /* Continue to design equivalent LPF */
+    wc:2*%pi*(f_pass + f_stop)/2/fs,
+    delta_w:2*%pi*(f_stop - f_pass)/fs,
+    /* Find the filter order */
+    M:ceiling((d_stop - 8)/(2.285*delta_w)),
+    /* Adjust filter order up or down as needed */
+    M:M+n_bump,
+    /* Make filter order even (odd number of taps) */
+    if ((M+1)/2.-floor((M+1)/2.)) = 0 then M:M + 1
+    else M:M,
+    N_taps:M + 1,
+    /* Obtain the Kaiser window */
+    w_k:w_kaiser(d_stop,M),
+    /* force float coefficients since w_k is already float */
+    b_sinc:float(makelist(wc/%pi*sinc(wc/%pi*((k-1)-M/2)),k,1,N_taps)),
+    b_k:b_sinc * w_k,
+    b_k:b_k/sum(b_k[k],k,1,N_taps),
+    /* Transform LPF to BPF */
+    f0:(f_pass2 + f_pass1)/2,
+    w0:2*%pi*f0/fs,
+    b_k_bp:float(makelist(2*b_k[k]*cos(w0*(k-1-M/2)),k,1,N_taps)),
+    /* Transform BPF to BSF via 1 - BPF for odd N_taps */
+    b_k_bs:makelist(if k = (floor(M/2)+1) then 1 - b_k_bp[k]
+                                        else -b_k_bp[k],k,1,N_taps)
+);
+
+
+fir_iir_notch(fi,fs,r):= block([w0,b,a,ba],
+    /*
+    Design a second-order FIR or IIR notch filter.
+
+    A second-order FIR notch filter is created by placing conjugate
+    zeros on the unit circle at angle corresponidng to the notch center
+    frequency. The IIR notch variation places a pair of conjugate poles
+    at the same angle, but with radius r < 1 (typically 0.9 to 0.95).
+
+    Parameters
+    ----------
+    fi : notch frequency is Hz relative to fs
+    fs : the sampling frequency in Hz, e.g. 8000
+    r : pole radius for IIR version, default = 0.95
+
+    Returns
+    -------
+    b : numerator coefficient ndarray
+    a : denominator coefficient ndarray 
+
+    Notes
+    -----
+    If the pole radius is 0 then an FIR version is created, that is 
+    there are no poles except at z = 0.
+    */
+    if r = [] then r:95/100,
+    w0:2*%pi*fi/fs,
+    if r >= 1 then print("Poles on or outside the unit circle.")
+    elseif r = 0 then a:[1]
+    else
+    (
+        a:[1, -2*r*cos(w0), r^2],
+        b:[1, -2*cos(w0), 1]
+    ),
+    ba:append(b,a)
+);
+   
+/* End of FilterTools.mac */
