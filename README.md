@@ -11,4 +11,6 @@ There are currently three modules that constitute this package:
 * `CommTools.mac`
 * `FilterTools.mac`
 
-The documentation was build using [Typst](https://typst.app/home/) and write code in a wxMaxima document. [Documentation pdf](docs/sp_tools_wxmaxima.pdf) is contained in the `docs` folder. 
+The documentation was build using [Typst](https://typst.app/home/) and write code in a wxMaxima document. A [documentation and examples pdf](docs/sp_tools_wxmaxima.pdf) is contained in the `docs` folder.
+
+I welcome feedback have plans for enhancing the code base.
