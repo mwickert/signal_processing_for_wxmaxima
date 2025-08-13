@@ -13,4 +13,4 @@ There are currently three modules that constitute this package:
 
 The documentation was build using [Typst](https://typst.app/home/) and write code in a wxMaxima document. A [documentation and examples pdf](docs/sp_tools_wxmaxima.pdf) is contained in the `docs` folder.
 
-I welcome feedback have plans for enhancing the code base.
+I welcome feedback and have plans for enhancing the code base.
