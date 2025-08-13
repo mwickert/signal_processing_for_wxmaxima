@@ -11,6 +11,14 @@ There are currently three modules that constitute this package:
 * `CommTools.mac`
 * `FilterTools.mac`
 
-The documentation was build using [Typst](https://typst.app/home/) and write code in a wxMaxima document. A [documentation and examples pdf](docs/sp_tools_wxmaxima.pdf) is contained in the `docs` folder.
+## Documentation and Examples
 
-I welcome feedback and have plans for enhancing the code base.
+A [documentation and examples pdf](docs/sp_tools_wxmaxima.pdf) can be found in the `docs` folder. Teaching materials for related courses can be found on (https://faculty.uccs.edu/mwickert/). The examples here are mostly written using Python and Julia. As a challenge try to replicate some of them using the wxMaxima tools. 
+
+### Tools used for Documentations
+
+The documentation was build using [Typst](https://typst.app/home/). Here you can use the cloud-based tools by first writing code in a wxMaxima document and cutting and pasting directly into the Typst cloud editor. Graphics are taken from the wxMaxima window by right clicking over a graphic and from the floating menu choose *Popout interactively*. Next in the plot viewer export the graphic to `SVG`. Typst natively works with SVG.
+
+## The future
+
+I welcome feedback and already have plans for enhancing the code base.
