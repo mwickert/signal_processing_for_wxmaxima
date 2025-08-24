@@ -24,7 +24,6 @@ SOFTWARE. */
 
 
 load("DSPTools.mac");
-load("bessel");
 
 /* Kaiser window function */
 w_kaiser(As_dB,M):= block([alpha,my_beta,w],
