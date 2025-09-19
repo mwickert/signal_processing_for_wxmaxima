@@ -24,7 +24,7 @@ SOFTWARE. */
 
 
 load("fft");
-load ("distrib");
+load("distrib");
 
 
 ones(N):= block([x_ones],
@@ -122,8 +122,8 @@ freqz(b_coef,a_coef,xlim,ylim,mode,title1,f_axis,fs):= block([],
     (
         if xlim = [] then xlim:[0,%pi],
         /*if ylim = [] then ylim:[-60,1],*/
-        Bw(ω):=sum(b_coef[k]*%e^(-%i*ω*k),k,1,length(b_coef)),
-        Aw(ω):=sum(a_coef[k]*%e^(-%i*ω*k),k,1,length(a_coef)),
+        Bw(ω):=sum(b_coef[k]*%e^(-%i*ω*(k-1)),k,1,length(b_coef)),
+        Aw(ω):=sum(a_coef[k]*%e^(-%i*ω*(k-1)),k,1,length(a_coef)),
         if sequal(mode,"ampl_dB") then
             wxdraw2d(
                 explicit(20*log(cabs(Bw(ω)/Aw(ω)))/log(10),ω,xlim[1],xlim[2]),
@@ -133,12 +133,22 @@ freqz(b_coef,a_coef,xlim,ylim,mode,title1,f_axis,fs):= block([],
                 xlabel="Frequency ω (rad/samp)",
                 ylabel="Gain (dB)",
                 title=title1
-            )  
+            ) 
+        elseif sequal(mode,"ampl") then
+            wxdraw2d(
+                explicit(cabs(Bw(ω)/Aw(ω)),ω,xlim[1],xlim[2]),
+                grid=[1,1],
+                if ylim = [] then yrange=auto
+                else yrange=[ylim[1],ylim[2]],
+                xlabel="Frequency ω (rad/samp)",
+                ylabel="Gain",
+                title=title1
+            ) 
         else 
             wxdraw2d(
                 explicit(carg(Bw(ω)/Aw(ω)),ω,xlim[1],xlim[2]),
                 grid=[1,1],
-                if ylim = [] then yrange=[-%pi,%pi]
+                if ylim = [] then yrange=auto
                 else yrange=[ylim[1],ylim[2]],
                 xlabel="Frequency ω (rad/samp)",
                 ylabel="Phase (rad)", 
@@ -149,8 +159,8 @@ freqz(b_coef,a_coef,xlim,ylim,mode,title1,f_axis,fs):= block([],
     (
         if xlim = [] then xlim:[0,fs/2],
         /*if ylim = [] then ylim:[-60,1], */  
-        Bw(f):=sum(b_coef[k]*%e^(-%i*2*%pi*f*k/fs),k,1,length(b_coef)),
-        Aw(f):=sum(a_coef[k]*%e^(-%i*2*%pi*f*k/fs),k,1,length(a_coef)),
+        Bw(f):=sum(b_coef[k]*%e^(-%i*2*%pi*f*(k-1)/fs),k,1,length(b_coef)),
+        Aw(f):=sum(a_coef[k]*%e^(-%i*2*%pi*f*(k-1)/fs),k,1,length(a_coef)),
         if sequal(mode,"ampl_dB") then
             wxdraw2d(
                 explicit(20*log(cabs(Bw(f)/Aw(f)))/log(10),f,xlim[1],xlim[2]),
@@ -160,12 +170,22 @@ freqz(b_coef,a_coef,xlim,ylim,mode,title1,f_axis,fs):= block([],
                 xlabel="Frequency (Hz)",
                 ylabel="Gain (dB)",
                 title=title1
-            )  
-        else
+            )
+        elseif sequal(mode,"ampl") then
             wxdraw2d(
+                explicit(cabs(Bw(f)/Aw(f)),f,xlim[1],xlim[2]),
+                grid=[1,1],
+                if ylim = [] then yrange=auto
+                else yrange=[ylim[1],ylim[2]],
+                xlabel="Frequency (Hz)",
+                ylabel="Gain",
+                title=title1
+            )
+        else
+            wxdraw2d( 
                 explicit(carg(Bw(f)/Aw(f)),f,xlim[1],xlim[2]),
                 grid=[1,1],
-                if ylim = [] then yrange=[-%pi,%pi]
+                if ylim = [] then yrange=auto
                 else yrange=[ylim[1],ylim[2]],
                 xlabel="Frequency (Hz)",
                 ylabel="Phase (rad)",
