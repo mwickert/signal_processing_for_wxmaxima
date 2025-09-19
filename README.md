@@ -22,3 +22,6 @@ The documentation was build using [Typst](https://typst.app/home/). Here you can
 ## The future
 
 I welcome feedback and already have plans for enhancing the code base.
+
+### Release notes:
+v1.01: fixed bug in freqz() phase plot; added "ampl" plot type to freqz() 
